@@ -58,6 +58,9 @@
   .tip { position: absolute; top: 0; pointer-events: none; min-width: 150px; padding: 8px 10px; font-size: 13px; background: var(--page); border: 1px solid var(--border); border-radius: 8px; }
   .tip div { display: flex; justify-content: space-between; gap: 14px; color: var(--ink-2); }
   .tip b { color: var(--ink); font-variant-numeric: tabular-nums; }
+  .h2h-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; color: var(--ink-2); font-size: 13px; }
+  .h2h-pick select { margin: 0; max-width: 100%; }
+  .record { margin: 12px 0 0; font-weight: 600; font-variant-numeric: tabular-nums; }
   .note { color: var(--ink-2); font-size: 13px; margin: 16px 0 0; }
   .warn { overflow-wrap: anywhere; padding: 10px 14px; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 12px; font-size: 13px; }
 </style>
@@ -77,15 +80,36 @@
     <h2>Breakdown</h2>
     <div class="scroll"><table id="table"></table></div>
   </section>
+  <section class="panel" id="h2h" hidden>
+    <h2>Head to head</h2>
+    <div class="h2h-pick">
+      <select id="h2h-a" aria-label="First person"></select>
+      <span>vs</span>
+      <select id="h2h-b" aria-label="Second person"></select>
+    </div>
+    <p class="record" id="h2h-record"></p>
+    <div class="scroll"><table id="h2h-table"></table></div>
+  </section>
   <section class="panel">
     <h2>Strain by week</h2>
     <div class="legend" id="legend"></div>
     <div class="chart" id="chart"></div>
   </section>
-  <p class="note">Strain runs 0–21 and gets harder to raise the higher it goes. Points: commit 1, PR opened 4, PR merged 2, review 3, issue 1, private contribution 1. Contributions over 20 in a day score nothing, and each active day adds 5 points. Weeks run Monday to Sunday UTC. GitHub reports private work as one anonymous total covering commits, PRs, reviews and issues, and only for people who share it on their profile. It can't be split into the other columns.</p>
+  <section class="panel">
+    <h2>Trophies</h2>
+    <p class="sub">Last 52 weeks. The most points in a finished week wins it, and ties count for everyone tied.</p>
+    <div class="scroll"><table id="trophies"></table></div>
+  </section>
+  <section class="panel">
+    <h2>Seasons</h2>
+    <p class="sub">Each calendar quarter is a season, won by the most total points.</p>
+    <div class="scroll"><table id="seasons"></table></div>
+  </section>
+  <p class="note">Strain runs 0–21 and gets harder to raise the higher it goes. Points: commit 1, PR opened 4, PR merged 2, review 3, issue 1, private contribution 1. Contributions over 20 in a day score nothing, and each active day adds 5 points. Weeks run Monday to Sunday in <span id="tz">UTC</span>. History is recalculated from GitHub, so it reflects the current scoring rules and each person's current sharing setting. GitHub reports private work as one anonymous total covering commits, PRs, reviews and issues, and only for people who share it on their profile. It can't be split into the other columns.</p>
 </main>
 <script>
   const SERIES = 8;
+  const CHART_WEEKS = 9;
   const COLUMNS = [
     ["commits", "Commits"], ["prsOpened", "PRs opened"], ["prsMerged", "PRs merged"],
     ["reviews", "Reviews"], ["issues", "Issues"], ["privateWork", "Private (all types)"], ["activeDays", "Active days"], ["overCap", "Over cap"], ["points", "Points"],
@@ -223,9 +247,81 @@
       : []));
   }
 
+  function table(id, headers, rows) {
+    const head = el("tr", {}, ...headers.map((title) => el("th", { scope: "col", textContent: title })));
+    const body = rows.map((cells) => el("tr", {}, ...cells.map((cell) => (cell.tagName ? cell : el("td", { textContent: cell })))));
+    document.getElementById(id).replaceChildren(el("thead", {}, head), el("tbody", {}, ...body));
+  }
+
+  function renderHistory(data) {
+    const byLogin = new Map(data.members.map((m) => [m.login, m]));
+    const trophies = [...data.trophies].sort((a, b) => b.weeklyWins - a.weeklyWins || b.seasonWins - a.seasonWins);
+    table("trophies", ["Member", "Weekly wins", "Wins this season", "Best week", "Longest streak"], trophies.map((t) => [
+      label(byLogin.get(t.login)),
+      t.weeklyWins,
+      t.seasonWins,
+      `${t.bestWeek.strain.toFixed(1)} (${shortDate(t.bestWeek.start)})`,
+      `${t.longestStreak} days`,
+    ]));
+    table("seasons", ["Season", "Champion", "Points", "Status"], data.seasons.map((s) => [
+      s.season,
+      s.champions.map((login) => label(byLogin.get(login))).join(", ") || "None",
+      s.points,
+      s.current ? "In progress" : s.partial ? "Partial data" : "Final",
+    ]));
+  }
+
+  // Win-loss record over finished weeks. Weeks where neither person scored don't count.
+  function headToHeadRecord(a, b) {
+    const record = { a: 0, b: 0, tied: 0 };
+    a.weeks.slice(0, -1).forEach((week, i) => {
+      const other = b.weeks[i];
+      if (week.points === 0 && other.points === 0) return;
+      if (week.points > other.points) record.a++;
+      else if (week.points < other.points) record.b++;
+      else record.tied++;
+    });
+    return record;
+  }
+
+  function renderHeadToHead(data, weekIndex) {
+    const a = data.members[+document.getElementById("h2h-a").value];
+    const b = data.members[+document.getElementById("h2h-b").value];
+    if (a === b) {
+      document.getElementById("h2h-record").textContent = "Pick two different people to compare.";
+      document.getElementById("h2h-table").replaceChildren();
+      return;
+    }
+    const { a: aWins, b: bWins, tied } = headToHeadRecord(a, b);
+    document.getElementById("h2h-record").textContent =
+      `${label(a)} ${aWins} – ${bWins} ${label(b)}${tied ? ` (${tied} tied)` : ""} over the last 52 weeks`;
+    const metrics = [["strain", "Strain"], ...COLUMNS];
+    table("h2h-table", ["Selected week", label(a), label(b)], metrics.map(([key, title]) => {
+      const [left, right] = [a.weeks[weekIndex][key], b.weeks[weekIndex][key]];
+      // More is better everywhere except over-cap activity, which isn't something to win.
+      const cell = (value, other) => el("td", {
+        textContent: key === "strain" ? value.toFixed(1) : value,
+        className: key !== "overCap" && value > other ? "top" : "",
+      });
+      return [title, cell(left, right), cell(right, left)];
+    }));
+  }
+
+  function setUpHeadToHead(data, render) {
+    if (data.members.length < 2) return;
+    document.getElementById("h2h").hidden = false;
+    const pickers = [document.getElementById("h2h-a"), document.getElementById("h2h-b")];
+    for (const picker of pickers) {
+      picker.append(...data.members.map((m, i) => el("option", { value: i, textContent: label(m) })));
+      picker.addEventListener("change", render);
+    }
+    pickers[1].value = 1;
+  }
+
   async function start() {
     const data = await (await fetch("/api/data")).json();
     document.getElementById("group").textContent = data.group;
+    document.getElementById("tz").textContent = data.timeZone.replaceAll("_", " ");
     document.getElementById("updated").textContent = `Updated ${new Date(data.generatedAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}`;
     if (data.failed.length) {
       document.getElementById("warn").replaceChildren(el("p", { className: "warn", textContent: `Couldn't load: ${data.failed.join(", ")}. Check the spelling in members.json.` }));
@@ -237,10 +333,17 @@
       picker.prepend(el("option", { value: i, textContent: current ? `This week (${shortDate(week.start)})` : `Week of ${shortDate(week.start)}` }));
     });
     picker.value = weeks.length - 1;
-    const render = () => { renderBoard(data, +picker.value); renderTable(data, +picker.value); };
+    const render = () => {
+      renderBoard(data, +picker.value);
+      renderTable(data, +picker.value);
+      if (data.members.length > 1) renderHeadToHead(data, +picker.value);
+    };
+    setUpHeadToHead(data, render);
     picker.addEventListener("change", render);
     render();
-    renderChart(data);
+    renderHistory(data);
+    // The chart stays readable by showing recent weeks; the picker reaches the full year.
+    renderChart({ ...data, members: data.members.map((m) => ({ ...m, weeks: m.weeks.slice(-CHART_WEEKS) })) });
   }
 
   start().catch((err) => {
