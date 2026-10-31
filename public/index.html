@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Git Strain</title>
+<meta name="description" content="A weekly GitHub activity leaderboard for friends.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2712%27 fill=%27none%27 stroke=%27%233987e5%27 stroke-width=%276%27/%3E%3C/svg%3E">
 <style>
   :root {
     color-scheme: dark;
@@ -23,18 +25,18 @@
   body { margin: 0; background: var(--page); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
   main { max-width: 1040px; margin: 0 auto; padding: 32px 16px 56px; }
   header { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; justify-content: space-between; margin-bottom: 24px; }
-  h1 { font-size: 28px; line-height: 1.15; margin: 0; }
+  h1 { font-size: 28px; line-height: 1.15; margin: 0; overflow-wrap: anywhere; }
   h2 { font-size: 16px; margin: 0 0 4px; }
   .sub { color: var(--ink-2); margin: 4px 0 0; font-size: 13px; }
   label { font-size: 13px; color: var(--ink-2); }
   select { margin-left: 6px; padding: 7px 10px; border-radius: 8px; font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--border); }
-  .board { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; list-style: none; margin: 0 0 12px; padding: 0; }
+  .board { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(290px, 100%), 1fr)); gap: 12px; list-style: none; margin: 0 0 12px; padding: 0; }
   .card { display: flex; gap: 16px; align-items: center; padding: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; }
   .ring { position: relative; flex: none; width: 96px; height: 96px; }
   .ring svg { display: block; transform: rotate(-90deg); }
   .ring strong { position: absolute; inset: 0; display: grid; place-items: center; font-size: 26px; }
   .who { min-width: 0; }
-  .who-top { display: flex; align-items: center; gap: 8px; }
+  .who-top { display: flex; align-items: center; gap: 8px; min-width: 0; }
   .rank { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
   .who img { width: 24px; height: 24px; border-radius: 50%; }
   .who a { color: var(--ink); font-weight: 600; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -57,7 +59,7 @@
   .tip div { display: flex; justify-content: space-between; gap: 14px; color: var(--ink-2); }
   .tip b { color: var(--ink); font-variant-numeric: tabular-nums; }
   .note { color: var(--ink-2); font-size: 13px; margin: 16px 0 0; }
-  .warn { padding: 10px 14px; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 12px; font-size: 13px; }
+  .warn { overflow-wrap: anywhere; padding: 10px 14px; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 12px; font-size: 13px; }
 </style>
 </head>
 <body>
@@ -80,13 +82,13 @@
     <div class="legend" id="legend"></div>
     <div class="chart" id="chart"></div>
   </section>
-  <p class="note">Strain runs 0–21 and gets harder to raise the higher it goes. Points: commit 1, PR opened 4, PR merged 2, review 3, issue 1, private contribution 1. Weeks run Monday to Sunday UTC. Private contributions are an anonymous total, and only appear for people who enabled them on their GitHub profile.</p>
+  <p class="note">Strain runs 0–21 and gets harder to raise the higher it goes. Points: commit 1, PR opened 4, PR merged 2, review 3, issue 1, private contribution 1. Weeks run Monday to Sunday UTC. GitHub reports private work as one anonymous total covering commits, PRs, reviews and issues, and only for people who share it on their profile. It can't be split into the other columns.</p>
 </main>
 <script>
   const SERIES = 8;
   const COLUMNS = [
     ["commits", "Commits"], ["prsOpened", "PRs opened"], ["prsMerged", "PRs merged"],
-    ["reviews", "Reviews"], ["issues", "Issues"], ["privateWork", "Private"], ["points", "Points"],
+    ["reviews", "Reviews"], ["issues", "Issues"], ["privateWork", "Private (all types)"], ["points", "Points"],
   ];
   const SVG_NS = "http://www.w3.org/2000/svg";
 
