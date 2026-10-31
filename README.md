@@ -80,6 +80,17 @@ Each week, activity is converted to points:
 
 PRs and reviews are worth more than commits so that squash-merge habits and helping teammates aren't penalized.
 
+Two rules then favor steady work over raw volume:
+
+- **Daily cap:** contributions above 20 in a single day score nothing, shown in the **Over cap** column. A burst of automated commits can't buy the top spot.
+- **Active-day bonus:** each day with any activity earns 5 points, shown in the **Active days** column.
+
+So a week's total is:
+
+```text
+points = (weighted activity − over cap) + (active days × 5)
+```
+
 Points are then converted to strain:
 
 ```text
@@ -98,7 +109,7 @@ Each extra point counts for less as the week gets busier, so one huge week can't
 
 Weeks run Monday to Sunday UTC. A streak is the number of consecutive days with at least one contribution, up to a maximum of one year, and having no activity yet today doesn't break it. The current week is unfinished, so its cards show last week's score instead of a change.
 
-To tune the scoring, edit `WEIGHTS` and `STRAIN_SCALE` in [`lib/scoring.mjs`](lib/scoring.mjs). The explanation at the bottom of [`public/index.html`](public/index.html) should be updated to match.
+To tune the scoring, edit `WEIGHTS`, `DAILY_CAP`, `ACTIVE_DAY_BONUS`, and `STRAIN_SCALE` in [`lib/scoring.mjs`](lib/scoring.mjs). The explanation at the bottom of [`public/index.html`](public/index.html) should be updated to match.
 
 ## Deploying to Vercel
 

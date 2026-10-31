@@ -82,13 +82,13 @@
     <div class="legend" id="legend"></div>
     <div class="chart" id="chart"></div>
   </section>
-  <p class="note">Strain runs 0–21 and gets harder to raise the higher it goes. Points: commit 1, PR opened 4, PR merged 2, review 3, issue 1, private contribution 1. Weeks run Monday to Sunday UTC. GitHub reports private work as one anonymous total covering commits, PRs, reviews and issues, and only for people who share it on their profile. It can't be split into the other columns.</p>
+  <p class="note">Strain runs 0–21 and gets harder to raise the higher it goes. Points: commit 1, PR opened 4, PR merged 2, review 3, issue 1, private contribution 1. Contributions over 20 in a day score nothing, and each active day adds 5 points. Weeks run Monday to Sunday UTC. GitHub reports private work as one anonymous total covering commits, PRs, reviews and issues, and only for people who share it on their profile. It can't be split into the other columns.</p>
 </main>
 <script>
   const SERIES = 8;
   const COLUMNS = [
     ["commits", "Commits"], ["prsOpened", "PRs opened"], ["prsMerged", "PRs merged"],
-    ["reviews", "Reviews"], ["issues", "Issues"], ["privateWork", "Private (all types)"], ["points", "Points"],
+    ["reviews", "Reviews"], ["issues", "Issues"], ["privateWork", "Private (all types)"], ["activeDays", "Active days"], ["overCap", "Over cap"], ["points", "Points"],
   ];
   const SVG_NS = "http://www.w3.org/2000/svg";
 
@@ -155,7 +155,7 @@
       el("td", { textContent: label(m) }),
       ...COLUMNS.map(([key]) => el("td", {
         textContent: week[key],
-        className: rows.length > 1 && week[key] > 0 && week[key] === best[key] ? "top" : "",
+        className: key !== "overCap" && rows.length > 1 && week[key] > 0 && week[key] === best[key] ? "top" : "",
       })),
     ));
     document.getElementById("table").replaceChildren(el("thead", {}, head), el("tbody", {}, ...body));
