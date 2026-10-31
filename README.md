@@ -61,7 +61,7 @@ Members, the group name, and the time zone live in [`members.json`](members.json
 
 `timeZone` takes any [IANA time zone name](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) and defaults to UTC if left out.
 
-Redeploy after changing it. The live page can take up to an hour to update because of the cache. See [CONTRIBUTING.md](CONTRIBUTING.md) for the full process.
+Changes pushed to `main` deploy automatically. The live page can take up to an hour to update because of the cache. See [CONTRIBUTING.md](CONTRIBUTING.md) for the full process.
 
 ### Counting private work
 
@@ -138,11 +138,13 @@ Nothing is stored. History is recalculated from GitHub, so it covers the last 52
    npx vercel env add GITHUB_TOKEN production
    ```
 
-3. Deploy:
+3. Deploy once by hand:
 
    ```bash
    npx vercel --prod
    ```
+
+After that, every push to `main` deploys to production automatically, because the Vercel project is connected to this repo. To set that up on a new project, open its **Settings**, then **Git**, and connect the repository. Pull requests get preview deployments, but those show a loading error unless `GITHUB_TOKEN` is also added for the preview environment.
 
 There's no build step. Vercel serves `public/` as static files and `api/data.js` as a serverless function, and `vercel.json` adds security headers.
 
@@ -195,7 +197,7 @@ The page is public to anyone with the link, because the deployment has no login.
 
 | Symptom | Likely cause | Fix |
 | --- | --- | --- |
-| "Couldn't load the leaderboard data" | `GITHUB_TOKEN` is missing or expired, or every username failed | Check the variable with `npx vercel env ls`, replace the token if needed, and redeploy |
-| "Couldn't load: *username*" | Username is misspelled or the account no longer exists | Correct it in `members.json` and redeploy |
+| "Couldn't load the leaderboard data" | `GITHUB_TOKEN` is missing or expired, or every username failed | Check the variable with `npx vercel env ls`, replace the token if needed, and redeploy with `npx vercel --prod` |
+| "Couldn't load: *username*" | Username is misspelled or the account no longer exists | Correct it in `members.json` and push to `main` |
 | A member shows zero despite being busy | Their work is in private repos | Have them turn on **Private contributions** |
-| A new member isn't showing | Change isn't deployed, or the cache hasn't refreshed | Redeploy and allow up to an hour |
+| A new member isn't showing | Change isn't on `main`, or the cache hasn't refreshed | Check the deployment in Vercel and allow up to an hour |

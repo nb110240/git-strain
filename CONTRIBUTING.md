@@ -6,7 +6,7 @@
 2. Open a pull request, or send your username to the repo owner.
 3. Optional: to have private work counted, open your GitHub profile, select **Contribution settings**, and turn on **Private contributions**. Only an anonymous total is shared.
 
-Your stats appear after the next production deploy. Deploys are run manually, and the page can take up to an hour to refresh.
+Your stats go live once the change reaches `main`, which deploys automatically. The page can take up to an hour to refresh.
 
 ## Make a code change
 
@@ -25,7 +25,7 @@ The project has no dependencies, so there's nothing to install. You need Node.js
    npm test
    ```
 
-4. Open a pull request that explains what changed and why.
+4. Open a pull request that explains what changed and why. Anything merged to `main` goes straight to the live site.
 
 ## Guidelines
 
