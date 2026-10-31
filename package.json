@@ -1,0 +1,10 @@
+{
+  "name": "git-strain",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "preview": "node scripts/serve.mjs",
+    "test": "node --test lib/scoring.test.mjs"
+  }
+}

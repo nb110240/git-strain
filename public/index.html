@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Git Strain</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,.10); --up: #0ca30c; --down: #e66767;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      color-scheme: light;
+      --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e; --muted: #6f6d68;
+      --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,.10); --up: #006300; --down: #d03b3b;
+      --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4; --s6: #008300; --s7: #6250d6; --s8: #e34948;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 1040px; margin: 0 auto; padding: 32px 16px 56px; }
+  header { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; justify-content: space-between; margin-bottom: 24px; }
+  h1 { font-size: 28px; line-height: 1.15; margin: 0; }
+  h2 { font-size: 16px; margin: 0 0 4px; }
+  .sub { color: var(--ink-2); margin: 4px 0 0; font-size: 13px; }
+  label { font-size: 13px; color: var(--ink-2); }
+  select { margin-left: 6px; padding: 7px 10px; border-radius: 8px; font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--border); }
+  .board { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; list-style: none; margin: 0 0 12px; padding: 0; }
+  .card { display: flex; gap: 16px; align-items: center; padding: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; }
+  .ring { position: relative; flex: none; width: 96px; height: 96px; }
+  .ring svg { display: block; transform: rotate(-90deg); }
+  .ring strong { position: absolute; inset: 0; display: grid; place-items: center; font-size: 26px; }
+  .who { min-width: 0; }
+  .who-top { display: flex; align-items: center; gap: 8px; }
+  .rank { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .who img { width: 24px; height: 24px; border-radius: 50%; }
+  .who a { color: var(--ink); font-weight: 600; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .who a:hover { text-decoration: underline; }
+  .meta { color: var(--ink-2); font-size: 13px; margin-top: 4px; }
+  .delta-up { color: var(--up); } .delta-down { color: var(--down); }
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 12px; }
+  .scroll { overflow-x: auto; margin-top: 10px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { padding: 9px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--grid); font-variant-numeric: tabular-nums; }
+  th { color: var(--ink-2); font-weight: 500; font-size: 13px; }
+  th:first-child, td:first-child { text-align: left; }
+  tr:last-child td { border-bottom: 0; }
+  td.top { font-weight: 700; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 8px; font-size: 13px; color: var(--ink-2); }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; }
+  .chart { position: relative; margin-top: 8px; }
+  .chart svg { display: block; width: 100%; height: auto; }
+  .tip { position: absolute; top: 0; pointer-events: none; min-width: 150px; padding: 8px 10px; font-size: 13px; background: var(--page); border: 1px solid var(--border); border-radius: 8px; }
+  .tip div { display: flex; justify-content: space-between; gap: 14px; color: var(--ink-2); }
+  .tip b { color: var(--ink); font-variant-numeric: tabular-nums; }
+  .note { color: var(--ink-2); font-size: 13px; margin: 16px 0 0; }
+  .warn { padding: 10px 14px; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 12px; font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1 id="group">Git Strain</h1>
+      <p class="sub" id="updated"></p>
+    </div>
+    <label>Week<select id="week"></select></label>
+  </header>
+  <div id="warn"></div>
+  <ol class="board" id="board"></ol>
+  <section class="panel">
+    <h2>Breakdown</h2>
+    <div class="scroll"><table id="table"></table></div>
+  </section>
+  <section class="panel">
+    <h2>Strain by week</h2>
+    <div class="legend" id="legend"></div>
+    <div class="chart" id="chart"></div>
+  </section>
+  <p class="note">Strain runs 0–21 and gets harder to raise the higher it goes. Points: commit 1, PR opened 4, PR merged 2, review 3, issue 1, private contribution 1. Weeks run Monday to Sunday UTC. Private contributions are an anonymous total, and only appear for people who enabled them on their GitHub profile.</p>
+</main>
+<script>
+  const SERIES = 8;
+  const COLUMNS = [
+    ["commits", "Commits"], ["prsOpened", "PRs opened"], ["prsMerged", "PRs merged"],
+    ["reviews", "Reviews"], ["issues", "Issues"], ["privateWork", "Private"], ["points", "Points"],
+  ];
+  const SVG_NS = "http://www.w3.org/2000/svg";
+
+  function el(tag, props = {}, ...children) {
+    const node = Object.assign(document.createElement(tag), props);
+    node.append(...children);
+    return node;
+  }
+  function svg(tag, attrs = {}) {
+    const node = document.createElementNS(SVG_NS, tag);
+    for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, value);
+    return node;
+  }
+  const label = (m) => m.name || m.login;
+  const shortDate = (iso) => new Date(`${iso}T00:00:00Z`).toLocaleDateString(undefined, { month: "short", day: "numeric", timeZone: "UTC" });
+  // Colour follows the person (members.json order), never their rank.
+  const colorOf = (i) => (i < SERIES ? `var(--s${i + 1})` : "var(--muted)");
+
+  function ring(value, color) {
+    const r = 42, circumference = 2 * Math.PI * r;
+    const root = svg("svg", { width: 96, height: 96, viewBox: "0 0 96 96", "aria-hidden": "true" });
+    const base = { cx: 48, cy: 48, r, fill: "none", "stroke-width": 8 };
+    root.append(
+      svg("circle", { ...base, stroke: "var(--grid)" }),
+      svg("circle", { ...base, stroke: value > 0 ? color : "none", "stroke-linecap": "round", "stroke-dasharray": `${(value / 21) * circumference} ${circumference}` }),
+    );
+    return root;
+  }
+
+  function renderBoard(data, weekIndex) {
+    const ranked = data.members
+      .map((m, i) => ({ m, i, week: m.weeks[weekIndex], prev: m.weeks[weekIndex - 1] }))
+      .sort((a, b) => b.week.points - a.week.points);
+    const isCurrent = weekIndex === data.members[0].weeks.length - 1;
+    document.getElementById("board").replaceChildren(...ranked.map(({ m, i, week, prev }, rank) => {
+      const meta = el("div", { className: "meta" });
+      if (prev) {
+        const diff = Math.round((week.strain - prev.strain) * 10) / 10;
+        // An unfinished week can't fairly show a delta, so show the reference value instead.
+        if (isCurrent) meta.append(`Last week ${prev.strain.toFixed(1)}`);
+        else meta.append(el("span", {
+          className: diff > 0 ? "delta-up" : diff < 0 ? "delta-down" : "",
+          textContent: diff === 0 ? "No change" : `${diff > 0 ? "▲" : "▼"} ${Math.abs(diff).toFixed(1)} vs prior week`,
+        }));
+      }
+      const avatar = el("img", { src: m.avatarUrl, alt: "", loading: "lazy" });
+      const link = el("a", { href: `https://github.com/${m.login}`, textContent: label(m) });
+      return el("li", { className: "card", ariaLabel: `Rank ${rank + 1}: ${label(m)}, strain ${week.strain.toFixed(1)}` },
+        el("div", { className: "ring" }, ring(week.strain, colorOf(i)), el("strong", { textContent: week.strain.toFixed(1) })),
+        el("div", { className: "who" },
+          el("div", { className: "who-top" }, el("span", { className: "rank", textContent: `#${rank + 1}` }), avatar, link),
+          meta,
+          el("div", { className: "meta", textContent: `${week.points} points · ${m.streak}-day streak` }),
+        ),
+      );
+    }));
+  }
+
+  function renderTable(data, weekIndex) {
+    const rows = data.members.map((m) => ({ m, week: m.weeks[weekIndex] })).sort((a, b) => b.week.points - a.week.points);
+    const head = el("tr", {}, el("th", { scope: "col", textContent: "Member" }), ...COLUMNS.map(([, title]) => el("th", { scope: "col", textContent: title })));
+    const best = Object.fromEntries(COLUMNS.map(([key]) => [key, Math.max(...rows.map((r) => r.week[key]))]));
+    const body = rows.map(({ m, week }) => el("tr", {},
+      el("td", { textContent: label(m) }),
+      ...COLUMNS.map(([key]) => el("td", {
+        textContent: week[key],
+        className: rows.length > 1 && week[key] > 0 && week[key] === best[key] ? "top" : "",
+      })),
+    ));
+    document.getElementById("table").replaceChildren(el("thead", {}, head), el("tbody", {}, ...body));
+  }
+
+  function renderChart(data) {
+    const W = 960, H = 280, L = 34, R = 30, T = 12, B = 28;
+    const weeks = data.members[0].weeks;
+    const x = (i) => L + (i * (W - L - R)) / Math.max(weeks.length - 1, 1);
+    const y = (v) => T + (1 - v / 21) * (H - T - B);
+    const root = svg("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Weekly strain per member; exact values are in the breakdown table" });
+
+    for (const v of [0, 7, 14, 21]) {
+      root.append(svg("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: v === 0 ? "var(--axis)" : "var(--grid)" }));
+      const tick = svg("text", { x: L - 8, y: y(v) + 4, "text-anchor": "end", fill: "var(--muted)", "font-size": 12 });
+      tick.textContent = v;
+      root.append(tick);
+    }
+    weeks.forEach((week, i) => {
+      const tick = svg("text", { x: x(i), y: H - 8, "text-anchor": "middle", fill: "var(--muted)", "font-size": 12 });
+      tick.textContent = shortDate(week.start);
+      root.append(tick);
+    });
+    data.members.forEach((m, i) => {
+      const line = m.weeks.map((w, j) => `${j ? "L" : "M"}${x(j)} ${y(w.strain)}`).join(" ");
+      root.append(svg("path", { d: line, fill: "none", stroke: colorOf(i), "stroke-width": 2, "stroke-linejoin": "round" }));
+    });
+
+    const cross = svg("line", { y1: T, y2: H - B, stroke: "var(--axis)", visibility: "hidden" });
+    const dots = data.members.map((m, i) => svg("circle", { r: 4, fill: colorOf(i), stroke: "var(--surface)", "stroke-width": 2, visibility: "hidden" }));
+    root.append(cross, ...dots);
+
+    const tip = el("div", { className: "tip", hidden: true });
+    const host = document.getElementById("chart");
+    root.addEventListener("pointermove", (event) => {
+      const box = root.getBoundingClientRect();
+      const px = ((event.clientX - box.left) / box.width) * W;
+      const i = Math.max(0, Math.min(weeks.length - 1, Math.round(((px - L) / (W - L - R)) * (weeks.length - 1))));
+      cross.setAttribute("x1", x(i)); cross.setAttribute("x2", x(i)); cross.setAttribute("visibility", "visible");
+      dots.forEach((dot, d) => {
+        dot.setAttribute("cx", x(i)); dot.setAttribute("cy", y(data.members[d].weeks[i].strain)); dot.setAttribute("visibility", "visible");
+      });
+      const rows = data.members.map((m) => ({ m, v: m.weeks[i].strain })).sort((a, b) => b.v - a.v);
+      tip.replaceChildren(
+        el("strong", { textContent: `Week of ${shortDate(weeks[i].start)}` }),
+        ...rows.map(({ m, v }) => el("div", {}, el("span", { textContent: label(m) }), el("b", { textContent: v.toFixed(1) }))),
+      );
+      tip.hidden = false;
+      const left = (x(i) / W) * box.width;
+      tip.style.left = `${left > box.width / 2 ? left - tip.offsetWidth - 12 : left + 12}px`;
+    });
+    root.addEventListener("pointerleave", () => {
+      tip.hidden = true;
+      cross.setAttribute("visibility", "hidden");
+      dots.forEach((dot) => dot.setAttribute("visibility", "hidden"));
+    });
+    host.replaceChildren(root, tip);
+
+    document.getElementById("legend").replaceChildren(...(data.members.length > 1
+      ? data.members.map((m, i) => {
+          const swatch = el("i");
+          swatch.style.background = colorOf(i);
+          return el("span", {}, swatch, label(m));
+        })
+      : []));
+  }
+
+  async function start() {
+    const data = await (await fetch("/api/data")).json();
+    document.getElementById("group").textContent = data.group;
+    document.getElementById("updated").textContent = `Updated ${new Date(data.generatedAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}`;
+    if (data.failed.length) {
+      document.getElementById("warn").replaceChildren(el("p", { className: "warn", textContent: `Couldn't load: ${data.failed.join(", ")}. Check the spelling in members.json.` }));
+    }
+    const weeks = data.members[0].weeks;
+    const picker = document.getElementById("week");
+    weeks.forEach((week, i) => {
+      const current = i === weeks.length - 1;
+      picker.prepend(el("option", { value: i, textContent: current ? `This week (${shortDate(week.start)})` : `Week of ${shortDate(week.start)}` }));
+    });
+    picker.value = weeks.length - 1;
+    const render = () => { renderBoard(data, +picker.value); renderTable(data, +picker.value); };
+    picker.addEventListener("change", render);
+    render();
+    renderChart(data);
+  }
+
+  start().catch((err) => {
+    console.error(err);
+    document.getElementById("board").replaceChildren(el("li", { className: "warn", textContent: "Couldn't load the leaderboard data." }));
+  });
+</script>
+</body>
+</html>
