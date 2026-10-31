@@ -3,10 +3,10 @@
 ## Join the group
 
 1. Add your GitHub username to `members` in [`members.json`](members.json).
-2. Open a pull request, or send your username to the repo owner.
+2. Open a pull request, or ask the repo owner or a collaborator to add you with the **Add friend** button on the board.
 3. Optional: to have private work counted, open your GitHub profile, select **Contribution settings**, and turn on **Private contributions**. Only an anonymous total is shared.
 
-Your stats go live once the change reaches `main`, which deploys automatically. The page can take up to an hour to refresh.
+Your stats go live a minute or two after the change reaches `main`, which deploys automatically.
 
 ## Make a code change
 

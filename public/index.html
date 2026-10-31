@@ -58,6 +58,16 @@
   .tip { position: absolute; top: 0; pointer-events: none; min-width: 150px; padding: 8px 10px; font-size: 13px; background: var(--page); border: 1px solid var(--border); border-radius: 8px; }
   .tip div { display: flex; justify-content: space-between; gap: 14px; color: var(--ink-2); }
   .tip b { color: var(--ink); font-variant-numeric: tabular-nums; }
+  .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  button { padding: 7px 12px; border-radius: 8px; font: inherit; font-size: 14px; color: var(--ink); background: var(--surface); border: 1px solid var(--border); cursor: pointer; }
+  button:hover { border-color: var(--muted); }
+  button.primary { color: #fff; background: #2a78d6; border-color: #2a78d6; }
+  dialog { width: min(420px, calc(100vw - 32px)); padding: 20px; color: var(--ink); background: var(--surface); border: 1px solid var(--border); border-radius: 14px; }
+  dialog::backdrop { background: rgba(0,0,0,.55); }
+  dialog label { display: block; margin-top: 12px; }
+  dialog input { width: 100%; margin-top: 6px; padding: 8px 10px; border-radius: 8px; font: inherit; color: var(--ink); background: var(--page); border: 1px solid var(--muted); }
+  .field-error { min-height: 18px; margin: 6px 0 0; font-size: 13px; color: var(--down); }
+  .dialog-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 16px; }
   .h2h-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; color: var(--ink-2); font-size: 13px; }
   .h2h-pick select { margin: 0; max-width: 100%; }
   .record { margin: 12px 0 0; font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -72,8 +82,24 @@
       <h1 id="group">Git Strain</h1>
       <p class="sub" id="updated"></p>
     </div>
-    <label>Week<select id="week"></select></label>
+    <div class="actions">
+      <button type="button" id="add-friend">Add friend</button>
+      <label>Week<select id="week"></select></label>
+    </div>
   </header>
+  <dialog id="add-dialog" aria-labelledby="add-title">
+    <form id="add-form" novalidate>
+      <h2 id="add-title">Add a friend</h2>
+      <label for="add-login">Their GitHub username</label>
+      <input id="add-login" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="39" required>
+      <p class="field-error" id="add-error" role="alert"></p>
+      <p class="sub">GitHub opens with the request filled in. Click <strong>Create</strong> there, and they'll join the board in a minute or two. Only the group's admins can add people.</p>
+      <div class="dialog-actions">
+        <button type="button" id="add-cancel">Cancel</button>
+        <button type="submit" class="primary">Continue on GitHub</button>
+      </div>
+    </form>
+  </dialog>
   <div id="warn"></div>
   <ol class="board" id="board"></ol>
   <section class="panel">
@@ -110,6 +136,8 @@
 <script>
   const SERIES = 8;
   const CHART_WEEKS = 9;
+  const REPO = "nb110240/git-strain";
+  const LOGIN_PATTERN = /^[a-z\d](?:[a-z\d-]{0,37}[a-z\d])?$/i;
   const COLUMNS = [
     ["commits", "Commits"], ["prsOpened", "PRs opened"], ["prsMerged", "PRs merged"],
     ["reviews", "Reviews"], ["issues", "Issues"], ["privateWork", "Private (all types)"], ["activeDays", "Active days"], ["overCap", "Over cap"], ["points", "Points"],
@@ -318,6 +346,30 @@
     pickers[1].value = 1;
   }
 
+  function setUpAddFriend() {
+    const dialog = document.getElementById("add-dialog");
+    const input = document.getElementById("add-login");
+    const error = document.getElementById("add-error");
+    document.getElementById("add-friend").addEventListener("click", () => {
+      input.value = "";
+      error.textContent = "";
+      dialog.showModal();
+    });
+    document.getElementById("add-cancel").addEventListener("click", () => dialog.close());
+    document.getElementById("add-form").addEventListener("submit", (event) => {
+      event.preventDefault();
+      const login = input.value.trim().replace(/^@/, "");
+      if (!LOGIN_PATTERN.test(login)) {
+        error.textContent = "Enter a GitHub username, using only letters, numbers and hyphens.";
+        input.focus();
+        return;
+      }
+      const title = encodeURIComponent(`Add friend: ${login}`);
+      window.open(`https://github.com/${REPO}/issues/new?title=${title}`, "_blank", "noopener");
+      dialog.close();
+    });
+  }
+
   async function start() {
     const data = await (await fetch("/api/data")).json();
     document.getElementById("group").textContent = data.group;
@@ -346,6 +398,7 @@
     renderChart({ ...data, members: data.members.map((m) => ({ ...m, weeks: m.weeks.slice(-CHART_WEEKS) })) });
   }
 
+  setUpAddFriend();
   start().catch((err) => {
     console.error(err);
     document.getElementById("board").replaceChildren(el("li", { className: "warn", textContent: "Couldn't load the leaderboard data." }));

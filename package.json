@@ -5,6 +5,6 @@
   "engines": { "node": ">=20" },
   "scripts": {
     "preview": "node scripts/serve.mjs",
-    "test": "node --test lib/scoring.test.mjs lib/collect.test.mjs"
+    "test": "node --test lib/scoring.test.mjs lib/collect.test.mjs lib/add-friend.test.mjs"
   }
 }

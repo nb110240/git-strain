@@ -1,0 +1,48 @@
+name: Add friend
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+# Requests run one at a time so two additions can't overwrite each other.
+concurrency:
+  group: add-friend
+  cancel-in-progress: false
+
+jobs:
+  add:
+    if: startsWith(github.event.issue.title, 'Add friend:')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - id: request
+        run: node scripts/add-friend.mjs
+        env:
+          # Issue text goes through env, never inline, so it can't inject shell commands.
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_AUTHOR_ASSOCIATION: ${{ github.event.issue.author_association }}
+          GH_TOKEN: ${{ github.token }}
+      - if: steps.request.outputs.login != ''
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add members.json
+          git commit -m "Add $LOGIN to the group" -m "Requested by @$ACTOR in #$ISSUE_NUMBER"
+          git push
+        env:
+          LOGIN: ${{ steps.request.outputs.login }}
+          ACTOR: ${{ github.event.issue.user.login }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+      - run: gh issue close "$ISSUE_NUMBER" --repo "$REPO" --comment "$MESSAGE"
+        env:
+          MESSAGE: ${{ steps.request.outputs.message }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}

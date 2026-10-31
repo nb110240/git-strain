@@ -61,7 +61,11 @@ Members, the group name, and the time zone live in [`members.json`](members.json
 
 `timeZone` takes any [IANA time zone name](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) and defaults to UTC if left out.
 
-Changes pushed to `main` deploy automatically. The live page can take up to an hour to update because of the cache. See [CONTRIBUTING.md](CONTRIBUTING.md) for the full process.
+The easiest way to add someone is the **Add friend** button on the board. Enter their GitHub username, then click **Create** on the GitHub page that opens. A [GitHub Action](.github/workflows/add-friend.yml) checks the request and adds them, and they appear in a minute or two.
+
+Only the repo owner and collaborators can add people, which GitHub verifies from their login. Requests from anyone else are closed with an explanation. There's no button for removing someone, so delete them from the file instead.
+
+You can also edit the file directly. Changes pushed to `main` deploy automatically, and each deploy refreshes the data. See [CONTRIBUTING.md](CONTRIBUTING.md) for the full process.
 
 ### Counting private work
 
@@ -173,6 +177,8 @@ lib/scoring.mjs        Weeks, points, strain, and streaks
 lib/*.test.mjs         Unit tests, using a mocked GitHub API
 public/index.html      The leaderboard page
 scripts/serve.mjs      Local preview server
+lib/add-friend.mjs     Rules for add-friend requests
+scripts/add-friend.mjs Applies a request, run by the GitHub Action
 members.json           Group name and member list
 vercel.json            Security headers
 ```
@@ -200,4 +206,4 @@ The page is public to anyone with the link, because the deployment has no login.
 | "Couldn't load the leaderboard data" | `GITHUB_TOKEN` is missing or expired, or every username failed | Check the variable with `npx vercel env ls`, replace the token if needed, and redeploy with `npx vercel --prod` |
 | "Couldn't load: *username*" | Username is misspelled or the account no longer exists | Correct it in `members.json` and push to `main` |
 | A member shows zero despite being busy | Their work is in private repos | Have them turn on **Private contributions** |
-| A new member isn't showing | Change isn't on `main`, or the cache hasn't refreshed | Check the deployment in Vercel and allow up to an hour |
+| A new member isn't showing | Request was refused or the deploy failed | Read the comment on the request in GitHub Issues, and check the deployment in Vercel |
